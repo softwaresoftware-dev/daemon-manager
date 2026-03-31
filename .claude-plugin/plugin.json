@@ -1,0 +1,19 @@
+{
+  "name": "daemon-manager",
+  "description": "Generic daemon lifecycle manager. Start, stop, and monitor persistent background processes with cross-platform IPC.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Thatcher",
+    "url": "https://github.com/ThatcherT"
+  },
+  "repository": "https://github.com/ThatcherT/daemon-manager",
+  "license": "MIT",
+  "keywords": ["daemon", "background", "ipc", "lifecycle", "process"],
+  "mcpServers": {
+    "daemon-manager": {
+      "command": "python",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server.py"],
+      "cwd": "${CLAUDE_PLUGIN_ROOT}"
+    }
+  }
+}
