@@ -67,5 +67,16 @@ def daemon_status(daemon_name: str) -> dict:
     return daemon_manager.daemon_status(daemon_name)
 
 
+@mcp.tool()
+def daemon_list() -> dict:
+    """List all known daemons with their status and auto-start configuration.
+
+    Scans ~/.claude/daemons/ for known daemons. Reports which are running,
+    which have systemd/launchd services configured (auto-start on boot),
+    and their saved command/args/cwd config.
+    """
+    return daemon_manager.daemon_list()
+
+
 if __name__ == "__main__":
     mcp.run()

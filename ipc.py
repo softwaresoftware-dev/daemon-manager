@@ -30,3 +30,8 @@ def get_pid_path(daemon_name: str) -> Path:
 def get_lock_path(daemon_name: str) -> Path:
     """Return the lock file path for a daemon."""
     return get_daemons_dir() / f"{daemon_name}.lock"
+
+
+def get_config_path(daemon_name: str) -> Path:
+    """Return the config file path for a daemon (stores command/args/cwd)."""
+    return get_daemons_dir() / f"{daemon_name}.json"

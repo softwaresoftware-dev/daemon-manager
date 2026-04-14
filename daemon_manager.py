@@ -3,6 +3,7 @@
 Handles PID files, process spawning, lock files, and cross-platform differences.
 """
 
+import json
 import os
 import platform
 import signal
@@ -11,7 +12,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from ipc import get_daemons_dir, get_ipc_address, get_lock_path, get_pid_path
+from ipc import get_config_path, get_daemons_dir, get_ipc_address, get_lock_path, get_pid_path
 
 IS_WINDOWS = platform.system() == "Windows"
 
@@ -184,6 +185,12 @@ def daemon_start(
         proc = subprocess.Popen([command, *args], **kwargs)
         _write_pid(daemon_name, proc.pid)
 
+        # Persist config so setup/list can reference it later
+        config = {"command": command, "args": args, "cwd": cwd}
+        if env:
+            config["env"] = env
+        get_config_path(daemon_name).write_text(json.dumps(config))
+
         # Wait for IPC to become available (up to 5 seconds)
         for _ in range(50):
             time.sleep(0.1)
@@ -281,3 +288,81 @@ def daemon_status(daemon_name: str) -> dict:
         "pid": pid,
         "ipc_address": ipc_address,
     }
+
+
+def _get_systemd_service_path(daemon_name: str) -> Path | None:
+    """Return the systemd user service path if it exists."""
+    if IS_WINDOWS:
+        return None
+    path = Path.home() / ".config" / "systemd" / "user" / f"{daemon_name}.service"
+    return path if path.exists() else None
+
+
+def _get_launchd_plist_path(daemon_name: str) -> Path | None:
+    """Return the launchd plist path if it exists."""
+    if platform.system() != "Darwin":
+        return None
+    path = Path.home() / "Library" / "LaunchAgents" / f"com.claude.daemon.{daemon_name}.plist"
+    return path if path.exists() else None
+
+
+def daemon_list() -> dict:
+    """List all known daemons with their status and service configuration.
+
+    Scans ~/.claude/daemons/ for PID files and config files to discover
+    daemons. Cross-references with systemd/launchd to detect which ones
+    have auto-start configured.
+    """
+    daemons_dir = get_daemons_dir()
+    seen = set()
+    results = []
+
+    # Find daemons from PID files and config files
+    for f in daemons_dir.iterdir():
+        if f.suffix in (".pid", ".json"):
+            name = f.stem
+            if name not in seen:
+                seen.add(name)
+
+    for name in sorted(seen):
+        ipc_address = get_ipc_address(name)
+        pid = _read_pid(name)
+        alive = _is_process_alive(pid) if pid else False
+        reachable = _is_ipc_reachable(ipc_address) if alive else False
+
+        # Load saved config
+        config_path = get_config_path(name)
+        config = None
+        if config_path.exists():
+            try:
+                config = json.loads(config_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        # Check for OS service manager
+        has_service = False
+        service_type = None
+        if not IS_WINDOWS:
+            if platform.system() == "Darwin":
+                if _get_launchd_plist_path(name):
+                    has_service = True
+                    service_type = "launchd"
+            else:
+                if _get_systemd_service_path(name):
+                    has_service = True
+                    service_type = "systemd"
+
+        entry = {
+            "daemon_name": name,
+            "running": alive,
+            "ipc_reachable": reachable,
+            "pid": pid,
+            "has_autostart": has_service,
+            "service_type": service_type,
+        }
+        if config:
+            entry["config"] = config
+
+        results.append(entry)
+
+    return {"daemons": results}

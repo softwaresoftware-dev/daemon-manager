@@ -5,17 +5,29 @@ description: Configure always-on daemons via systemd, launchd, or Task Scheduler
 
 # Daemon Manager Setup
 
-Guide the user through configuring a daemon to run permanently (always-on) using their OS service manager.
+Configure daemons to auto-start on boot using the OS service manager.
 
-## Steps
+## Workflow
 
-1. Ask which daemon to configure (daemon_name, command, args, cwd)
-2. Detect the OS using `daemon_status` or check `platform`
-3. Generate the appropriate service configuration:
+1. **Scan for daemons.** Call `daemon_list` to discover all known daemons, their running state, saved config (command/args/cwd), and whether they already have auto-start configured.
+
+2. **Show status.** Present a table:
+
+   | Daemon | Running | Auto-start | Service |
+   |--------|---------|------------|---------|
+   | (name) | yes/no  | yes/no     | systemd / launchd / none |
+
+3. **Identify gaps.** Daemons that are known (have a PID file or config) but do NOT have auto-start configured need setup. If all daemons have auto-start, tell the user everything is configured and stop.
+
+4. **If a specific daemon was requested** (user passed an argument or named one), set up just that one. Otherwise, offer to set up all daemons missing auto-start.
+
+5. **Check for saved config.** Each daemon may have a saved config (command, args, cwd) from a prior `daemon_start` call. If config exists, use it — don't ask the user. If no config exists, ask the user for the command, args, and working directory.
+
+6. **Generate and install the service.** Based on the detected OS:
 
 ### Linux (systemd)
 
-Create a unit file at `~/.config/systemd/user/{daemon_name}.service`:
+Create `~/.config/systemd/user/{daemon_name}.service`:
 
 ```ini
 [Unit]
@@ -39,13 +51,12 @@ Then enable and start:
 systemctl --user daemon-reload
 systemctl --user enable {daemon_name}
 systemctl --user start {daemon_name}
-# Enable lingering so it runs without an active login session:
 loginctl enable-linger $USER
 ```
 
 ### macOS (launchd)
 
-Create a plist at `~/Library/LaunchAgents/com.claude.daemon.{daemon_name}.plist`:
+Create `~/Library/LaunchAgents/com.claude.daemon.{daemon_name}.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -78,7 +89,6 @@ Then load: `launchctl load ~/Library/LaunchAgents/com.claude.daemon.{daemon_name
 
 ### Windows (Task Scheduler)
 
-Guide the user to create a scheduled task:
 ```powershell
 $action = New-ScheduledTaskAction -Execute "{command}" -Argument "{args}" -WorkingDirectory "{cwd}"
 $trigger = New-ScheduledTaskTrigger -AtLogOn
@@ -86,5 +96,4 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
 Register-ScheduledTask -TaskName "claude-daemon-{daemon_name}" -Action $action -Trigger $trigger -Settings $settings
 ```
 
-4. After generating the config, verify the daemon is running with `daemon_status`
-5. Confirm the setup is working by checking IPC reachability
+7. **Verify.** Call `daemon_status` to confirm the daemon is running and IPC is reachable after the service starts.
