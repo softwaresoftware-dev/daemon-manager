@@ -1,6 +1,6 @@
 [project]
 name = "daemon-manager"
-version = "1.1.0"
+version = "1.1.1"
 description = "Generic daemon lifecycle manager for Claude Code plugins"
 requires-python = ">=3.11"
 license = {text = "MIT"}

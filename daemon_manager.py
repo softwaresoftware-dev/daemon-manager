@@ -306,6 +306,20 @@ def _get_launchd_plist_path(daemon_name: str) -> Path | None:
     return path if path.exists() else None
 
 
+def _has_windows_scheduled_task(daemon_name: str) -> bool:
+    """Check if a Windows Scheduled Task exists for this daemon."""
+    if not IS_WINDOWS:
+        return False
+    try:
+        result = subprocess.run(
+            ["schtasks", "/Query", "/TN", f"claude-daemon-{daemon_name}"],
+            capture_output=True, timeout=5,
+        )
+        return result.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def daemon_list() -> dict:
     """List all known daemons with their status and service configuration.
 
@@ -342,15 +356,18 @@ def daemon_list() -> dict:
         # Check for OS service manager
         has_service = False
         service_type = None
-        if not IS_WINDOWS:
-            if platform.system() == "Darwin":
-                if _get_launchd_plist_path(name):
-                    has_service = True
-                    service_type = "launchd"
-            else:
-                if _get_systemd_service_path(name):
-                    has_service = True
-                    service_type = "systemd"
+        if IS_WINDOWS:
+            if _has_windows_scheduled_task(name):
+                has_service = True
+                service_type = "task_scheduler"
+        elif platform.system() == "Darwin":
+            if _get_launchd_plist_path(name):
+                has_service = True
+                service_type = "launchd"
+        else:
+            if _get_systemd_service_path(name):
+                has_service = True
+                service_type = "systemd"
 
         entry = {
             "daemon_name": name,
