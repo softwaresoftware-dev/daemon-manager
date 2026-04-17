@@ -4,9 +4,9 @@
   "version": "1.1.1",
   "author": {
     "name": "Thatcher",
-    "url": "https://github.com/ThatcherT"
+    "url": "https://github.com/softwaresoftware-dev"
   },
-  "repository": "https://github.com/ThatcherT/daemon-manager",
+  "repository": "https://github.com/softwaresoftware-dev/daemon-manager",
   "keywords": [
     "daemon",
     "background",
