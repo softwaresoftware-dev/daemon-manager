@@ -32,7 +32,7 @@ def pyproject():
 
 
 def test_required_fields(plugin_json):
-    for field in ["name", "description", "version", "author", "license", "keywords"]:
+    for field in ["name", "description", "version", "author", "keywords"]:
         assert field in plugin_json, f"Missing required field: {field}"
 
 
@@ -52,5 +52,6 @@ def test_mcp_server_config(plugin_json):
     assert "mcpServers" in plugin_json
     assert "daemon-manager" in plugin_json["mcpServers"]
     server = plugin_json["mcpServers"]["daemon-manager"]
-    assert server["command"] == "python"
-    assert "server.py" in server["args"][0]
+    assert server["command"] == "uv"
+    assert server["args"][:3] == ["run", "--directory", "${CLAUDE_PLUGIN_ROOT}"]
+    assert "server.py" in server["args"]

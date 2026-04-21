@@ -1,9 +1,9 @@
 [project]
 name = "daemon-manager"
-version = "1.1.1"
+version = "1.1.2"
 description = "Generic daemon lifecycle manager for Claude Code plugins"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = {text = "Proprietary"}
 authors = [{name = "Thatcher"}]
 dependencies = [
     "mcp[cli]",
@@ -13,7 +13,3 @@ dependencies = [
 test = [
     "pytest>=8.0",
 ]
-
-[build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
