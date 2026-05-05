@@ -3,7 +3,7 @@
   "description": "Generic daemon lifecycle manager. Start, stop, and monitor persistent background processes with cross-platform IPC.",
   "version": "1.1.2",
   "author": {
-    "name": "Thatcher",
+    "name": "NOV LLC",
     "url": "https://github.com/softwaresoftware-dev"
   },
   "repository": "https://github.com/softwaresoftware-dev/daemon-manager",
