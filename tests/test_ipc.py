@@ -27,6 +27,14 @@ def test_get_ipc_address_unix(monkeypatch):
     assert ".claude/daemons/" in addr
 
 
+def test_get_ipc_address_macos(monkeypatch):
+    # macOS reports "Darwin" — it must take the Unix-socket path, same as Linux.
+    monkeypatch.setattr(platform, "system", lambda: "Darwin")
+    addr = ipc.get_ipc_address("test-daemon")
+    assert addr.endswith("test-daemon.sock")
+    assert ".claude/daemons/" in addr
+
+
 def test_get_ipc_address_windows(monkeypatch):
     monkeypatch.setattr(platform, "system", lambda: "Windows")
     addr = ipc.get_ipc_address("test-daemon")
